@@ -1,25 +1,38 @@
 import React, { Component } from "react";
-import {fetchLcboEndpoint} from './api/lcbo'
+import { fetchLcboEndpoint } from '../api/lcbo'
 
-import {ResultsContainer} from './ResultsContainer'
+import { ResultsContainer } from './ResultsContainer'
 
 
-class Searchbar extends Component {
+class Search extends Component {
   constructor(props){
     super(props);
     this.state = {
       q : '',
       productID : 0,
-      product: ''
+      product: '',
+      stores: []
     }
     this.handleChange = this.handleChange.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.findStores = this.findStores.bind(this)
   }
   
   handleChange(event) {
     console.log('state', this.state)
     this.setState({q: event.target.value});
   }
+
+  findStores() {
+      fetchLcboEndpoint("stores", "product_id", {
+        q: this.state.productID
+      }).then(data => {
+        console.log("STORE",data)
+        this.setState({
+          stores: data.result
+        })
+      });
+    }
 
   handleSubmit(event) {
     event.preventDefault();
@@ -30,26 +43,30 @@ class Searchbar extends Component {
         this.setState({
           productID: data.result[0].id,
           product: data.result[0],
-          show: true
+          show: true,
+          stores: []
         })
-      });
+      }).then(() => {
+        this.findStores()
+      }).catch((err) => {
+        console.log(err)
+      })
     }
 
   render() {
     return (
       <div>
         <form role="search" onSubmit={this.handleSubmit}>
-          <div className="search-control">
+          <div className="search-box">
             <input type="text" value={this.state.q} onChange={this.handleChange}
                  placeholder="Find your poison..."/>
             <button type='submit' >Search</button>
-            <ResultsContainer show={this.state.show} product={this.state.product} productID={this.state.productID}/>
           </div>
         </form> 
-        
+        <ResultsContainer stores={this.state.stores} show={this.state.show} product={this.state.product} productID={this.state.productID}/>
       </div>
     )
   }
 }
 
-export default Searchbar;
+export default Search;
